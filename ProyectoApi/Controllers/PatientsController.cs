@@ -2,6 +2,7 @@
 using MongoDB.Bson;
 using ProyectoApi.Models;
 using ProyectoApi.Services;
+using System.Diagnostics.Eventing.Reader;
 
 
 namespace ProyectoApi.Controllers
@@ -40,13 +41,32 @@ namespace ProyectoApi.Controllers
                 return BadRequest("Tipo de identificación no válido.");
             }
 
+
+            if (patientDto.Email != patientDto.ConfirmEmail)
+            {
+                ModelState.AddModelError("ConfirmEmail", "El correo electronico no coincide.");
+                  return BadRequest(ModelState);
+            }
+            
+
+            if (patientDto.Password != patientDto.ConfirmPassword)
+            {
+                ModelState.AddModelError("ConfirmPassword", "La contraseña no coincide.");
+                return BadRequest(ModelState);
+            }
+
             var patient = new Patient
             {
                 IdentificationType = patientDto.IdentificationType,
                 IdentificationNumber = patientDto.IdentificationNumber,
                 FirstName = patientDto.FirstName,
                 LastName = patientDto.LastName,
-                DateOfBirth = patientDto.DateOfBirth
+                DateOfBirth = patientDto.DateOfBirth,
+                Phone = patientDto.Phone,
+                Email = patientDto.Email,
+                Password = patientDto.Password,
+                ConfirmEmail = patientDto.ConfirmEmail,
+                ConfirmPassword = patientDto.ConfirmPassword
             };
 
             await _patientService.CreatePatientAsync(patient);
@@ -74,6 +94,11 @@ namespace ProyectoApi.Controllers
             patientToUpdate.FirstName = patientDto.FirstName;
             patientToUpdate.LastName = patientDto.LastName;
             patientToUpdate.DateOfBirth = patientDto.DateOfBirth;
+            patientToUpdate.Phone = patientDto.Phone;
+            patientToUpdate.Email = patientDto.Email;
+            patientToUpdate.Password = patientDto.Password;
+            patientToUpdate.ConfirmEmail = patientDto.ConfirmEmail;
+            patientToUpdate.ConfirmPassword = patientDto.ConfirmPassword;
 
             await _patientService.UpdatePatientAsync(id.ToString(), patientToUpdate);
 

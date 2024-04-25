@@ -7,8 +7,8 @@ namespace ProyectoApi.Models
 {
     public class Patient
     {
-        [BsonId] // Especifica que esta propiedad es el Id en MongoDB
-        [BsonRepresentation(BsonType.ObjectId)] // Indica que el tipo de representación en la base de datos es ObjectId
+        [BsonId] 
+        [BsonRepresentation(BsonType.ObjectId)] 
         public string Id { get; set; }
 
         [Required(ErrorMessage = "El tipo de identificación es obligatorio.")]
@@ -25,11 +25,28 @@ namespace ProyectoApi.Models
 
         [Required(ErrorMessage = "La fecha de nacimiento es obligatoria.")]
         [DataType(DataType.Date)]
-        [BsonElement("DateOfBirth")] // Especifica el nombre del campo en MongoDB
+        [BsonElement("DateOfBirth")]
         public DateTime DateOfBirth { get; set; }
 
-        // Propiedad de solo lectura que concatena el tipo de identificación con el número de identificación
-        [BsonIgnore] // Indica que este campo no debe ser mapeado a la base de datos
+        [Required(ErrorMessage = "El numero de celular es obligatorio.")]
+        public string Phone { get; set; }
+
+        [Required(ErrorMessage = "El correo electronico es obligatorio.")]
+        public string Email {  get; set; }
+
+        [Required(ErrorMessage = "El correo electronico es obligatorio.")]
+        public string ConfirmEmail { get; set; }
+
+
+        [Required(ErrorMessage = "La contraseña es obligatoria.")]
+        public string Password {  get; set; }
+
+        [Required(ErrorMessage = "La contraseña es obligatoria.")]
+        public string ConfirmPassword { get; set; }
+
+
+
+        [BsonIgnore]
         public string Identification
         {
             get { return $"{IdentificationType}-{IdentificationNumber}"; }
