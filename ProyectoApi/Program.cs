@@ -1,5 +1,8 @@
-using MongoDB.Driver;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.IdentityModel.Tokens;
 using ProyectoApi.Services;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,8 +20,30 @@ builder.Services.AddSingleton<IMongoDatabaseSettings>(sp =>
         DatabaseName = "Pacientes"
     });
 
-// Crea una instancia de PatientService y la registra como un servicio singleton
 builder.Services.AddSingleton<PatientService>();
+builder.Services.AddScoped<UserService>();
+
+// Genera el secreto JWT
+string secret = JwtSecretGenerator.GenerateSecret(64);
+
+// Registra TokenService con el secreto generado
+builder.Services.AddSingleton<TokenService>(new TokenService(secret));
+
+// Configura la autenticación JWT
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(secret)),
+        ValidateIssuer = false,
+        ValidateAudience = false
+    };
+});
 
 var app = builder.Build();
 
@@ -30,6 +55,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Agrega la autenticación
+app.UseAuthentication();
 
 app.UseAuthorization();
 
