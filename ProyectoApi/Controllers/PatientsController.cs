@@ -12,6 +12,7 @@ namespace ProyectoApi.Controllers
     public class PatientsController : ControllerBase
     {
         private readonly PatientService _patientService;
+        private readonly TokenService _tokenService;
 
         // Lista estática de tipos de identificación válidos
         private readonly List<string> _validIdentificationTypes = new List<string>
@@ -22,9 +23,10 @@ namespace ProyectoApi.Controllers
             "Pasaporte"
         };
 
-        public PatientsController(PatientService patientService)
+        public PatientsController(PatientService patientService, TokenService tokenService)
         {
             _patientService = patientService;
+            _tokenService = tokenService;
         }
 
         [HttpPost]
@@ -41,13 +43,11 @@ namespace ProyectoApi.Controllers
                 return BadRequest("Tipo de identificación no válido.");
             }
 
-
             if (patientDto.Email != patientDto.ConfirmEmail)
             {
-                ModelState.AddModelError("ConfirmEmail", "El correo electronico no coincide.");
-                  return BadRequest(ModelState);
+                ModelState.AddModelError("ConfirmEmail", "El correo electrónico no coincide.");
+                return BadRequest(ModelState);
             }
-            
 
             if (patientDto.Password != patientDto.ConfirmPassword)
             {
@@ -71,8 +71,30 @@ namespace ProyectoApi.Controllers
 
             await _patientService.CreatePatientAsync(patient);
 
-            return CreatedAtAction(nameof(GetPatientById), new { id = patient.Id }, patient);
+            // Determinar el rol del paciente
+            string role = DetermineUserRole(patient);
+
+            // Crear un objeto UserModel basado en la información del paciente
+            var userModel = new UserModel
+            {
+                Email = patient.Email,
+                // Añade cualquier otra propiedad necesaria para UserModel
+            };
+
+            // Generar el token JWT
+            var token = _tokenService.GenerateToken(userModel, role);
+
+            return CreatedAtAction(nameof(GetPatientById), new { id = patient.Id }, new { Patient = patient, Token = token });
         }
+
+        private string DetermineUserRole(Patient patient)
+        {
+            // Determina el rol del paciente aquí, por ejemplo, basado en sus propiedades
+            string role = DetermineUserRole(patient);
+
+            return role;
+        }
+
 
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdatePatient(String id, [FromBody] PatientDto patientDto)
