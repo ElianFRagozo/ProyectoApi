@@ -4,7 +4,6 @@ using ProyectoApi.Models;
 using ProyectoApi.Services;
 using System.Diagnostics.Eventing.Reader;
 
-
 namespace ProyectoApi.Controllers
 {
     [ApiController]
@@ -12,7 +11,7 @@ namespace ProyectoApi.Controllers
     public class PatientsController : ControllerBase
     {
         private readonly PatientService _patientService;
-        private readonly TokenService _tokenService;
+
 
         // Lista estática de tipos de identificación válidos
         private readonly List<string> _validIdentificationTypes = new List<string>
@@ -26,7 +25,7 @@ namespace ProyectoApi.Controllers
         public PatientsController(PatientService patientService, TokenService tokenService)
         {
             _patientService = patientService;
-            _tokenService = tokenService;
+
         }
 
         [HttpPost]
@@ -71,30 +70,8 @@ namespace ProyectoApi.Controllers
 
             await _patientService.CreatePatientAsync(patient);
 
-            // Determinar el rol del paciente
-            string role = DetermineUserRole(patient);
-
-            // Crear un objeto UserModel basado en la información del paciente
-            var userModel = new UserModel
-            {
-                Email = patient.Email,
-                // Añade cualquier otra propiedad necesaria para UserModel
-            };
-
-            // Generar el token JWT
-            var token = _tokenService.GenerateToken(userModel, role);
-
-            return CreatedAtAction(nameof(GetPatientById), new { id = patient.Id }, new { Patient = patient, Token = token });
+            return CreatedAtAction(nameof(GetPatientById), new { id = patient.Id }, patient);
         }
-
-        private string DetermineUserRole(Patient patient)
-        {
-            // Determina el rol del paciente aquí, por ejemplo, basado en sus propiedades
-            string role = DetermineUserRole(patient);
-
-            return role;
-        }
-
 
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdatePatient(String id, [FromBody] PatientDto patientDto)
@@ -152,6 +129,5 @@ namespace ProyectoApi.Controllers
             await _patientService.DeletePatientAsync(id);
             return NoContent();
         }
-
     }
 }
