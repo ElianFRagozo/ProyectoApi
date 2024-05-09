@@ -5,27 +5,24 @@ using ProyectoApi.Models;
 using ProyectoApi.Services;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using System.Data;
 
 namespace Proyecto.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize] 
+    [Authorize]
 
     public class UsersController : ControllerBase
     {
         private readonly UserService _userService;
 
-        private readonly TokenService _tokenService;
-
-        public UsersController(UserService userService, TokenService tokenService)
+        public UsersController(UserService userService)
         {
             _userService = userService;
-            _tokenService = tokenService; 
         }
 
         [HttpPost("login")]
+        [AllowAnonymous]
         public async Task<IActionResult> Login([FromBody] LoginModel loginModel)
         {
             // Consulta el usuario en base de datos por email
@@ -35,35 +32,8 @@ namespace Proyecto.Controllers
                 return Unauthorized();
             }
 
-            // Determina el tipo de usuario (role)
-            string role = DetermineUserRole(user);
-
-            // Genera el token JWT con el tipo de usuario
-            var token = _tokenService.GenerateToken(user, role);
-
-            return Ok(new { Token = token });
+            return Ok(user);
         }
-
-        // Método para determinar el tipo de usuario
-        private string DetermineUserRole(UserModel user)
-        {
-            // Aquí puedes implementar la lógica para determinar el tipo de usuario
-            // basado en sus roles u otros criterios. Por ejemplo:
-            if (user.Roles.Contains("admin"))
-            {
-                return "admin";
-            }
-            else if (user.Roles.Contains("medico"))
-            {
-                return "medico";
-            }
-            else
-            {
-                return "paciente";
-            }
-        }
-
-
 
         [HttpPost]
         [AllowAnonymous]
@@ -83,20 +53,8 @@ namespace Proyecto.Controllers
             // Crear el usuario en la base de datos
             await _userService.CreateUserAsync(userModel);
 
-            string role = DetermineUserRole(userModel);
-
-            // Generar el token JWT
-            var token = _tokenService.GenerateToken(userModel, role);
-
-            // Imprimir el token en la consola para visualización
-            Console.WriteLine("Token generado: " + token);
-
-            // Retornar una respuesta con el nuevo usuario creado
             return CreatedAtAction(nameof(GetUserByEmail), new { email = userModel.Email }, userModel);
         }
-
-
-
 
         [HttpGet("{email}")]
         public async Task<IActionResult> GetUserByEmail(string email)

@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using MongoDB.Driver;
 using ProyectoApi.Models;
 using ProyectoApiUsuarios.Controllers;
@@ -26,17 +27,11 @@ namespace ProyectoApi.Services
                 return null;
 
             string userRole = DetermineUserRole(user);
-
-            // Genera un token JWT con los roles del usuario
-            var tokenService = new TokenService("tu_secreto_secreto");
-            var token = tokenService.GenerateToken(user, userRole);
-            return token;
+            return "TokenGenrado";
         }
 
         private string DetermineUserRole(UserModel user)
         {
-            // Aquí puedes implementar la lógica para determinar el tipo de usuario
-            // basado en sus roles u otros criterios. Por ejemplo:
             if (user.Roles.Contains("admin"))
             {
                 return "admin";
@@ -51,9 +46,14 @@ namespace ProyectoApi.Services
             }
         }
 
+
         public async Task<List<UserModel>> GetUsersAsync()
         {
             return await _users.Find(user => true).ToListAsync();
+        }
+        public async Task<UserModel> GetUserAsync(string id)
+        {
+            return await _users.Find(user => user.Id.Equals(id)).FirstAsync();
         }
 
         public async Task CreateUserAsync(UserModel user)

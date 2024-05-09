@@ -1,8 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using MongoDB.Bson;
 using ProyectoApi.Models;
 using ProyectoApi.Services;
-using System.Diagnostics.Eventing.Reader;
+
 
 namespace ProyectoApi.Controllers
 {
@@ -11,7 +10,6 @@ namespace ProyectoApi.Controllers
     public class PatientsController : ControllerBase
     {
         private readonly PatientService _patientService;
-
 
         // Lista estática de tipos de identificación válidos
         private readonly List<string> _validIdentificationTypes = new List<string>
@@ -22,10 +20,10 @@ namespace ProyectoApi.Controllers
             "Pasaporte"
         };
 
-        public PatientsController(PatientService patientService, TokenService tokenService)
+        public PatientsController(PatientService patientService)
         {
             _patientService = patientService;
-
+ 
         }
 
         [HttpPost]
@@ -70,8 +68,26 @@ namespace ProyectoApi.Controllers
 
             await _patientService.CreatePatientAsync(patient);
 
-            return CreatedAtAction(nameof(GetPatientById), new { id = patient.Id }, patient);
+            // Determinar el rol del paciente
+            string role = DetermineUserRole(patient);
+
+            // Crear un objeto UserModel basado en la información del paciente
+            var userModel = new UserModel
+            {
+                Email = patient.Email,
+                // Añade cualquier otra propiedad necesaria para UserModel
+            };
+            return CreatedAtAction(nameof(GetPatientById), new { id = patient.Id }, new { Patient = patient });
         }
+
+        private string DetermineUserRole(Patient patient)
+        {
+            // Determina el rol del paciente aquí, por ejemplo, basado en sus propiedades
+            string role = DetermineUserRole(patient);
+
+            return role;
+        }
+
 
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdatePatient(String id, [FromBody] PatientDto patientDto)
@@ -129,5 +145,6 @@ namespace ProyectoApi.Controllers
             await _patientService.DeletePatientAsync(id);
             return NoContent();
         }
+
     }
 }

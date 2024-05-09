@@ -22,28 +22,7 @@ builder.Services.AddSingleton<IMongoDatabaseSettings>(sp =>
 
 builder.Services.AddSingleton<PatientService>();
 builder.Services.AddScoped<UserService>();
-
-// Genera el secreto JWT
-string secret = JwtSecretGenerator.GenerateSecret(64);
-
-// Registra TokenService con el secreto generado
-builder.Services.AddSingleton<TokenService>(new TokenService(secret));
-
-// Configura la autenticación JWT
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-}).AddJwtBearer(options =>
-{
-    options.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(secret)),
-        ValidateIssuer = false,
-        ValidateAudience = false
-    };
-});
+builder.Services.AddSingleton<HorarioService>();
 
 var app = builder.Build();
 
