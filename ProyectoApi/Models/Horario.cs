@@ -14,6 +14,8 @@ namespace ProyectoApi.Models
         public String IdMedico { get; set; }
 
         [Required(ErrorMessage = "Debe indicar el horario a asignar.")]
-        public DateTime FechaHora { get; set; }
+        public string horaInicio { get; set; }
+        public string horaFin { get; set; }
+        public string dia { get; set; }
     }
 }

@@ -25,29 +25,31 @@ namespace ProyectoApi.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return BadRequest(ModelState + "PRIMER FILTRO");
             }
 
             // Aquí deberías await el método GetUserAsync para obtener el resultado correctamente
-            var user = await _userService.GetUserAsync(horariodto.IdMedico);
-            if (user == null)
-            {
-                ModelState.AddModelError("IdMedico", "El médico no ha sido registrado.");
-                return BadRequest(ModelState);
-            }
+                var user = await _userService.GetUserAsync(horariodto.IdMedico);
+                if (user == null)
+                {
+                    ModelState.AddModelError("IdMedico", "El médico no ha sido registrado.");
+                    return BadRequest(ModelState + "SEGUNDO FILTRO")  ;
+                }
 
-            var horarioExistente = await _horarioService.GetHorariosAsync(horariodto.IdMedico, horariodto.FechaHora);
+            var horarioExistente = await _horarioService.GetHorarioAsync(horariodto.IdMedico, horariodto.dia, horariodto.horaInicio);
 
             if (horarioExistente != null)
             {
                 ModelState.AddModelError("horario", "Error al registrar el horario.");
-                return BadRequest(ModelState);
+                return BadRequest(ModelState + "  TERCER FILTRO");
             }
 
             var horario = new Horario
             {
                 IdMedico = horariodto.IdMedico,
-                FechaHora = horariodto.FechaHora
+                dia = horariodto.dia,
+                horaInicio = horariodto.horaInicio,
+                horaFin = horariodto.horaFin
             };
 
             await _horarioService.CreateHorarioAsync(horario);

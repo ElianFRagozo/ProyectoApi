@@ -23,6 +23,8 @@ builder.Services.AddSingleton<IMongoDatabaseSettings>(sp =>
 builder.Services.AddSingleton<PatientService>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddSingleton<HorarioService>();
+builder.Services.AddSingleton<CitaService>();
+
 
 var app = builder.Build();
 

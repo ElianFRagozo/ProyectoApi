@@ -18,9 +18,9 @@ namespace ProyectoApi.Services
 
         }
 
-        public async Task<Horario> GetHorariosAsync(string idMedico, DateTime fecha)
+        public async Task<Horario> GetHorarioAsync(string idMedico, string dia, string hora)
         {
-            return await _horario.Find(horario => horario.IdMedico == idMedico && horario.FechaHora == fecha).FirstOrDefaultAsync();
+            return await _horario.Find(horario => horario.IdMedico == idMedico && horario.dia == dia && horario.horaInicio == hora).FirstOrDefaultAsync();
         }
         public async Task<List<Horario>> GetHorariosAsync()
         {
@@ -35,7 +35,7 @@ namespace ProyectoApi.Services
 
             await _horario.InsertOneAsync(horario);
         }
-        
+
         public async Task<Horario> GetHorarioIDAsync(string _horarioId)
         {
             var objectId = ObjectId.Parse(_horarioId);
@@ -46,6 +46,7 @@ namespace ProyectoApi.Services
 
 
     }
+
     namespace ProyectoApi.Services
     {
         public interface IMongoDatabaseSettings
