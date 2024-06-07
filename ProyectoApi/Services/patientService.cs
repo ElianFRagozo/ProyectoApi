@@ -41,14 +41,7 @@ namespace ProyectoApi.Services
             var objectId = ObjectId.Parse(id);
             return await _patients.Find(p => p.Id == objectId.ToString()).FirstOrDefaultAsync();
         }
-
-        public async Task DeletePatientAsync(string id)
-    {
-        var objectId = ObjectId.Parse(id);
-        await _patients.DeleteOneAsync(p => p.Id == objectId.ToString());
     }
-
-}
 }
 
 namespace ProyectoApi.Services

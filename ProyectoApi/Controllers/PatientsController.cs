@@ -10,8 +10,9 @@ namespace ProyectoApi.Controllers
     public class PatientsController : ControllerBase
     {
         private readonly PatientService _patientService;
+        private readonly HttpClient _httpClient; 
 
-        // Lista estática de tipos de identificación válidos
+        
         private readonly List<string> _validIdentificationTypes = new List<string>
         {
             "Cédula de Ciudadanía",
@@ -20,10 +21,10 @@ namespace ProyectoApi.Controllers
             "Pasaporte"
         };
 
-        public PatientsController(PatientService patientService)
+        public PatientsController(PatientService patientService, HttpClient httpClient)
         {
             _patientService = patientService;
- 
+            _httpClient = httpClient; 
         }
 
         [HttpPost]
@@ -34,7 +35,6 @@ namespace ProyectoApi.Controllers
                 return BadRequest(ModelState);
             }
 
-            // Validamos el tipo de identificación
             if (!_validIdentificationTypes.Contains(patientDto.IdentificationType))
             {
                 return BadRequest("Tipo de identificación no válido.");
@@ -68,29 +68,41 @@ namespace ProyectoApi.Controllers
 
             await _patientService.CreatePatientAsync(patient);
 
-            // Determinar el rol del paciente
-            string role = DetermineUserRole(patient);
+            List<string> role = DetermineUserRoles(patient);
 
-            // Crear un objeto UserModel basado en la información del paciente
             var userModel = new UserModel
             {
-                Email = patient.Email,
-                // Añade cualquier otra propiedad necesaria para UserModel
+                Id = Guid.NewGuid().ToString(),
+                Email = patientDto.Email,
+                Password = patientDto.Password,
+                Roles = role
             };
+
+            var result = await SendUserToUserApiAsync(userModel);
+            if (!result.IsSuccessStatusCode)
+            {
+                return StatusCode((int)result.StatusCode, "Error al enviar datos a la API de usuarios.");
+            }
+
             return CreatedAtAction(nameof(GetPatientById), new { id = patient.Id }, new { Patient = patient });
         }
 
-        private string DetermineUserRole(Patient patient)
+        private List<string> DetermineUserRoles(Patient patient)
         {
-            // Determina el rol del paciente aquí, por ejemplo, basado en sus propiedades
-            string role = DetermineUserRole(patient);
-
+            
+            List<string> role = new List<string>();
+            role.Add("paciente");
             return role;
         }
 
+        private async Task<HttpResponseMessage> SendUserToUserApiAsync(UserModel userModel)
+        {
+            var response = await _httpClient.PostAsJsonAsync("http://localhost:7127/api/Users", userModel);
+            return response;
+        }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdatePatient(String id, [FromBody] PatientDto patientDto)
+        public async Task<IActionResult> UpdatePatient(string id, [FromBody] PatientDto patientDto)
         {
             var patientToUpdate = await _patientService.GetPatientAsync(id.ToString());
             if (patientToUpdate == null)
@@ -98,7 +110,6 @@ namespace ProyectoApi.Controllers
                 return NotFound();
             }
 
-            // Validamos el tipo de identificación
             if (!_validIdentificationTypes.Contains(patientDto.IdentificationType))
             {
                 return BadRequest("Tipo de identificación no válido.");
@@ -121,7 +132,7 @@ namespace ProyectoApi.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetPatientById(String id)
+        public async Task<IActionResult> GetPatientById(string id)
         {
             var patient = await _patientService.GetPatientAsync(id.ToString());
             if (patient == null)
@@ -138,13 +149,5 @@ namespace ProyectoApi.Controllers
             var patients = await _patientService.GetPatientsAsync();
             return Ok(patients);
         }
-
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeletePatientAsync(string id)
-        {
-            await _patientService.DeletePatientAsync(id);
-            return NoContent();
-        }
-
     }
 }

@@ -6,13 +6,13 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Agrega servicios al contenedor.
+
 builder.Services.AddControllers();
 // Aprende más sobre cómo configurar Swagger/OpenAPI en https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Agrega la configuración de MongoDB
+
 builder.Services.AddSingleton<IMongoDatabaseSettings>(sp =>
     new ProyectoApi.Services.MongoDatabaseSettings
     {
@@ -21,10 +21,7 @@ builder.Services.AddSingleton<IMongoDatabaseSettings>(sp =>
     });
 
 builder.Services.AddSingleton<PatientService>();
-builder.Services.AddScoped<UserService>();
-builder.Services.AddSingleton<HorarioService>();
-builder.Services.AddSingleton<CitaService>();
-
+builder.Services.AddHttpClient();
 
 var app = builder.Build();
 
@@ -37,7 +34,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// Agrega la autenticación
+
 app.UseAuthentication();
 
 app.UseAuthorization();
