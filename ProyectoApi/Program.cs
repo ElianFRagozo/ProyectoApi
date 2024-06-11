@@ -6,24 +6,47 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
+// ConfiguraciÃ³n de servicios
 builder.Services.AddControllers();
-// Aprende más sobre cómo configurar Swagger/OpenAPI en https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-
 builder.Services.AddSingleton<IMongoDatabaseSettings>(sp =>
-    new ProyectoApi.Services.MongoDatabaseSettings
+    new MongoDatabaseSettings
     {
-        ConnectionString = "mongodb+srv://eenriquefragozo:PRaCUGb0aXeffjYF@cluster0.uawckuf.mongodb.net/?retryWrites=true&w=majority&appName=Cluster",
-        DatabaseName = "Pacientes"
+        ConnectionString = builder.Configuration.GetConnectionString("MongoDbConnection"),
+        DatabaseName = builder.Configuration.GetValue<string>("MongoDatabaseName")
     });
 
 builder.Services.AddSingleton<PatientService>();
 builder.Services.AddHttpClient();
 
+// ConfiguraciÃ³n de la autenticaciÃ³n JWT
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+        };
+    });
+
+builder.Services.AddAuthorization();
+
 var app = builder.Build();
+
+app.UseCors(options =>
+{
+    options.AllowAnyOrigin()
+           .AllowAnyMethod()
+           .AllowAnyHeader();
+});
 
 // Configura el pipeline de solicitudes HTTP.
 if (app.Environment.IsDevelopment())
@@ -33,10 +56,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
-
 app.UseAuthentication();
-
 app.UseAuthorization();
 
 app.MapControllers();

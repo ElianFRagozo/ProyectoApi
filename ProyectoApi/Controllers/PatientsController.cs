@@ -1,7 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using ProyectoApi.Models;
 using ProyectoApi.Services;
-
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 
 namespace ProyectoApi.Controllers
 {
@@ -11,8 +14,8 @@ namespace ProyectoApi.Controllers
     {
         private readonly PatientService _patientService;
         private readonly HttpClient _httpClient; 
+        private readonly IConfiguration _configuration;
 
-        
         private readonly List<string> _validIdentificationTypes = new List<string>
         {
             "Cédula de Ciudadanía",
@@ -21,10 +24,11 @@ namespace ProyectoApi.Controllers
             "Pasaporte"
         };
 
-        public PatientsController(PatientService patientService, HttpClient httpClient)
+        public PatientsController(PatientService patientService, HttpClient httpClient, IConfiguration configuration)
         {
             _patientService = patientService;
-            _httpClient = httpClient; 
+            _httpClient = httpClient;
+            _configuration = configuration;
         }
 
         [HttpPost]
@@ -63,10 +67,11 @@ namespace ProyectoApi.Controllers
                 Email = patientDto.Email,
                 Password = patientDto.Password,
                 ConfirmEmail = patientDto.ConfirmEmail,
-                ConfirmPassword = patientDto.ConfirmPassword
+                ConfirmPassword = patientDto.ConfirmPassword,
+                UserId = patientDto.UserId,
             };
 
-            await _patientService.CreatePatientAsync(patient);
+            var createdPatientId = await _patientService.CreatePatientAsync(patient);
 
             List<string> role = DetermineUserRoles(patient);
 
@@ -84,21 +89,40 @@ namespace ProyectoApi.Controllers
                 return StatusCode((int)result.StatusCode, "Error al enviar datos a la API de usuarios.");
             }
 
-            return CreatedAtAction(nameof(GetPatientById), new { id = patient.Id }, new { Patient = patient });
+            return CreatedAtAction(nameof(GetPatientById), new { id = createdPatientId }, new { Patient = patient });
         }
 
         private List<string> DetermineUserRoles(Patient patient)
         {
-            
-            List<string> role = new List<string>();
-            role.Add("paciente");
+            List<string> role = new List<string> { "paciente" };
             return role;
         }
+        
 
         private async Task<HttpResponseMessage> SendUserToUserApiAsync(UserModel userModel)
         {
-            var response = await _httpClient.PostAsJsonAsync("http://localhost:7127/api/Users", userModel);
+            var userServiceUrl = _configuration["USER_SERVICE_URL"];
+            var response = await _httpClient.PostAsJsonAsync(userServiceUrl, userModel);
             return response;
+        }
+
+        [HttpGet("me")]
+        [Authorize]
+        public async Task<IActionResult> GetMyDetails()
+        {
+            var userId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
+            if (userId == null)
+            {
+                return Unauthorized();
+            }
+
+            var patient = await _patientService.GetPatientByUserIdAsync(userId);
+            if (patient == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(patient);
         }
 
         [HttpPut("{id}")]
@@ -148,6 +172,18 @@ namespace ProyectoApi.Controllers
         {
             var patients = await _patientService.GetPatientsAsync();
             return Ok(patients);
+        }
+
+        [HttpGet("user/{userId}")]
+        public async Task<IActionResult> GetPatientByUserId(string userId)
+        {
+            var patient = await _patientService.GetPatientByUserIdAsync(userId);
+            if (patient == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(patient);
         }
     }
 }

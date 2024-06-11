@@ -43,6 +43,7 @@ namespace ProyectoApi.Models
 
         [Required(ErrorMessage = "La contraseña es obligatoria.")]
         public string ConfirmPassword { get; set; }
+        public string UserId {get; set;}
 
 
 

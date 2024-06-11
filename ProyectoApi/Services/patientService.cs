@@ -24,11 +24,20 @@ namespace ProyectoApi.Services
             return await _patients.Find(patient => true).ToListAsync();
         }
 
-        public async Task CreatePatientAsync(Patient patient)
+        public async Task<string> CreatePatientAsync(Patient patient)
         {
-            await _patients.InsertOneAsync(patient);
+            await _patients.InsertOneAsync(patient); // Inserta el paciente en la base de datos
+                                                     // Obtén el Id generado por MongoDB después de la inserción
+            string generatedId = patient.Id;
+            // Asigna el Id generado como userId del paciente
+            patient.UserId = generatedId;
+            // Actualiza el documento del paciente en la base de datos para reflejar el userId asignado
+            var filter = Builders<Patient>.Filter.Eq(p => p.Id, generatedId);
+            var update = Builders<Patient>.Update.Set(p => p.UserId, generatedId);
+            await _patients.UpdateOneAsync(filter, update);
+            // Devuelve el Id generado
+            return generatedId;
         }
-
 
         public async Task UpdatePatientAsync(string id, Patient patient)
         {
@@ -40,6 +49,11 @@ namespace ProyectoApi.Services
         {
             var objectId = ObjectId.Parse(id);
             return await _patients.Find(p => p.Id == objectId.ToString()).FirstOrDefaultAsync();
+        }
+
+        public async Task<Patient> GetPatientByUserIdAsync(string userId)
+        {
+            return await _patients.Find(p => p.Id == userId).FirstOrDefaultAsync();
         }
     }
 }
